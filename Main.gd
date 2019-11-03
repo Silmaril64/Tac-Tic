@@ -165,28 +165,30 @@ func check_pattern_position(vect,espion=false):
 	colors[0] = Grid[vect.x][vect.y][0]
 	var size_serie
 	var count
-	for i in range(Players[Current_Player].TMG.size()):
-		for k in range(0,Nb_Choix):
-			colors[k] = 0
-		size_serie = Players[Current_Player].TMG[i].size() - 1
-		count = 0
-		for j in range(size_serie):
-			if (vect.x + Players[Current_Player].TMG[i][j][0] < X_Comp) && (vect.y + Players[Current_Player].TMG[i][j][1] < Y_Comp) && (vect.x + Players[Current_Player].TMG[i][j][0] >= 0) && (vect.y + Players[Current_Player].TMG[i][j][1] >= 0):
-				if colors[Players[Current_Player].TMG[i][j][2] - 1] == 0:
-					var num_color =  Grid[vect.x + Players[Current_Player].TMG[i][j][0]][vect.y + Players[Current_Player].TMG[i][j][1]][0]
-					if num_color != 0 && (floor((num_color-1/2)/Nb_Choix) == Current_Player || espion ):
-						already_exists = 0
-						for k in range(Nb_Choix):
-							if colors[k] != 0:
-								if colors[k] == num_color:
-									already_exists += 1
-						colors[Players[Current_Player].TMG[i][j][2] - 1] = Grid[vect.x + Players[Current_Player].TMG[i][j][0]][vect.y + Players[Current_Player].TMG[i][j][1]][0]
-						if !already_exists :
-							count += 1
-				elif (colors[Players[Current_Player].TMG[i][j][2] - 1] == Grid[vect.x + Players[Current_Player].TMG[i][j][0]][vect.y + Players[Current_Player].TMG[i][j][1]][0]) :
-					count += 1
-		if count == size_serie:
-			return Players[Current_Player].TMG[i]
+	var Pattern_Lists = [Players[Current_Player].TMG,Players[Current_Player].TMF]
+	for z in range(Pattern_Lists.size()):
+		for i in range(Pattern_Lists[z].size()):
+			for k in range(0,Nb_Choix):
+				colors[k] = 0
+			size_serie = Pattern_Lists[z][i].size() - 1
+			count = 0
+			for j in range(size_serie):
+				if (vect.x + Pattern_Lists[z][i][j][0] < X_Comp) && (vect.y + Pattern_Lists[z][i][j][1] < Y_Comp) && (vect.x + Pattern_Lists[z][i][j][0] >= 0) && (vect.y + Pattern_Lists[z][i][j][1] >= 0):
+					if colors[Pattern_Lists[z][i][j][2] - 1] == 0:
+						var num_color =  Grid[vect.x + Pattern_Lists[z][i][j][0]][vect.y + Pattern_Lists[z][i][j][1]][0]
+						if num_color != 0 && (floor((num_color-1/2)/Nb_Choix) == Current_Player || espion ):
+							already_exists = 0
+							for k in range(Nb_Choix):
+								if colors[k] != 0:
+									if colors[k] == num_color:
+										already_exists += 1
+							colors[Pattern_Lists[z][i][j][2] - 1] = Grid[vect.x + Pattern_Lists[z][i][j][0]][vect.y + Pattern_Lists[z][i][j][1]][0]
+							if !already_exists :
+								count += 1
+					elif (colors[Pattern_Lists[z][i][j][2] - 1] == Grid[vect.x + Pattern_Lists[z][i][j][0]][vect.y + Pattern_Lists[z][i][j][1]][0]) :
+						count += 1
+			if count == size_serie:
+				return Pattern_Lists[z][i]
 	return []
 
 func Payoff(nature, level): # nature: pts_plus, ... // level: puissance de la combi
@@ -248,17 +250,17 @@ class Faction extends Node2D:
 		[[0,0,1],[0,1,1],[0,2,1],[Gains.PTS_PLUS, 1]],
 		[[0,0,1],[1,0,1],[2,0,1],[Gains.PTS_PLUS, 1]],
 		[[0,0,1],[0,-1,1],[0,-2,1],[Gains.PTS_PLUS, 1]],
-		[[0,0,1],[-1,0,1],[-2,0,1],[Gains.PTS_PLUS, 1]],
+		[[0,0,1],[-1,0,1],[-2,0,1],[Gains.PTS_PLUS, 1]]
 		
-		[[0,0,1],[1,0,2],[0,1,2],[1,1,1],[Gains.PTS_PLUS, 1]], # Possible opti : dire dès le debut ce qui est necessaire dans les 4 directions)
-		[[0,0,1],[-1,0,2],[0,-1,2],[-1,-1,1],[Gains.PTS_PLUS, 1]],
-		[[0,0,1],[-1,0,2],[0,1,2],[-1,1,1],[Gains.PTS_PLUS, 1]],
-		[[0,0,1],[1,0,2],[0,-1,2],[1,-1,1],[Gains.PTS_PLUS, 1]],
+#		[[0,0,1],[1,0,2],[0,1,2],[1,1,1],[Gains.PTS_PLUS, 1]], # Possible opti : dire dès le debut ce qui est necessaire dans les 4 directions)
+#		[[0,0,1],[-1,0,2],[0,-1,2],[-1,-1,1],[Gains.PTS_PLUS, 1]],
+#		[[0,0,1],[-1,0,2],[0,1,2],[-1,1,1],[Gains.PTS_PLUS, 1]],
+#		[[0,0,1],[1,0,2],[0,-1,2],[1,-1,1],[Gains.PTS_PLUS, 1]],
 		] #Tableau des masques généraux
 		# !!! TRIER PAR ORDRE DE PRIORITE DECROISSANT !!! (ptet en faire plusieurs
 		#séparés, chacun s'arretant au premier sélectionné, mais comme ca on peut
 		#cumuler plusieurs patterns sans changer le fonctionnement)
-
+	
 	var Nb_Unites = [10,10,10,10]#Le tableau récapitulant le nombre max de points 
 							 #d'unité de chaque type (de ton coté = moins dépensés)
 	var Nb_Unites_Max = [10,10,10,10]
@@ -310,8 +312,7 @@ class Warrior extends Faction:
 	var TMF = [[[0,0,1],[1,0,2],[0,1,2],[1,1,1],[Gains.PTS_PLUS, 1]], # Possible opti : dire dès le debut ce qui est necessaire dans les 4 directions)
 	[[0,0,1],[-1,0,2],[0,-1,2],[-1,-1,2],[Gains.PTS_PLUS, 1]],
 	[[0,0,1],[-1,0,2],[0,1,2],[-1,1,1],[Gains.PTS_PLUS, 1]],
-	[[0,0,1],[1,0,2],[0,-1,2],[1,-1,1],[Gains.PTS_PLUS, 1]],
-	[[],[],[],[Gains.PTS_PLUS, 1]]
+	[[0,0,1],[1,0,2],[0,-1,2],[1,-1,1],[Gains.PTS_PLUS, 1]]
 	#[[],[],[],[Gains.PTS_PLUS, 1]]
 	]#Tableau des masques de faction
 	
@@ -333,3 +334,7 @@ class Warrior extends Faction:
 		if agressive: # Theoriquement les else ne servent a rien (retours partout)
 			return level
 		return level*3 - 1
+
+
+class Thief extends Faction:
+	var TMF = []
